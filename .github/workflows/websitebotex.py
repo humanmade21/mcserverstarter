@@ -53,7 +53,7 @@ options.add_argument("--disable-dev-shm-usage")
 #options.add_argument(f"--user-data-dir={temp_dir}")
 
 # Bypass detection
-Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4457.0 Safari/537.36 OPRGX/91.0.4457.0 OPR/91.0.4457.0
+options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4457.0 Safari/537.36 OPRGX/91.0.4457.0 OPR/91.0.4457.0")
 options.add_argument("--disable-blink-features=AutomationControlled")
 options.add_argument("--enable-javascript")
 options.add_argument("--disable-web-security")
