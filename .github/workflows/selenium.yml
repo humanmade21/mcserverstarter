@@ -84,6 +84,14 @@ jobs:
           echo "github.event.inputs.start_or_stop = '${{ github.event.inputs.start_or_stop }}'"
           echo "github.event_name = '${{ github.event_name }}'"
 
+      - name: Test Opera GX launches directly (diagnostic)
+        run: |
+          echo "Testing direct headless launch of Opera GX..."
+          "$OPERA_GX_PATH" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --dump-dom https://example.com || echo "Exit code: $?"
+          echo "---"
+          echo "Checking for missing shared library dependencies:"
+          ldd "$OPERA_GX_PATH" | grep "not found" || echo "No missing libraries detected by ldd"
+
       - name: Restore Session Cache
         if: ${{ inputs.use_session_cache == 'true' }}
         id: restore-session
