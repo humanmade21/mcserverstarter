@@ -56,26 +56,26 @@ jobs:
           path: |
             /opt/opera-gx
             /usr/local/bin/chromedriver
-          key: opera-cache-v3
+          key: opera-cache-v4
 
       - name: Install Opera GX and ChromeDriver
         if: steps.opera-cache.outputs.cache-hit != 'true'
         run: |
-          # Download and install the real Opera GX .deb package for Linux
-          # using Opera's official redirector - always resolves to the current build,
-          # so this doesn't go stale like a hardcoded version/filename would.
-          wget --content-disposition -O opera-gx.deb "https://download.opera.com/download/get/?partner=www&opsys=Linux&product=Opera+GX"
-          ls -la opera-gx.deb
-          file opera-gx.deb
+          # Add Opera's official APT repository and install Opera GX through it.
+          # This avoids guessing a direct .deb filename/URL, which turned out to
+          # be unreliable - the repo method is what Opera actually documents for
+          # scripted/CI installs.
+          wget -qO- https://deb.opera.com/archive.key | sudo gpg --dearmor -o /usr/share/keyrings/opera-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/opera-archive-keyring.gpg arch=amd64] https://deb.opera.com/opera-gx-stable/ stable non-free" | sudo tee /etc/apt/sources.list.d/opera-gx-stable.list
 
           sudo apt-get update
-          sudo apt-get install -y ./opera-gx.deb
+          sudo apt-get install -y opera-gx-stable
 
           # Confirm where it installed and symlink to a stable path we control
-          OPERA_BIN=$(which opera-gx || which opera || echo "")
+          OPERA_BIN=$(which opera-gx || echo "")
           if [ -z "$OPERA_BIN" ]; then
-            echo "ERROR: opera-gx binary not found after install. Check apt-get output above."
-            dpkg -L $(dpkg -f opera-gx.deb Package) || true
+            echo "ERROR: opera-gx binary not found after install."
+            dpkg -L opera-gx-stable || true
             exit 1
           fi
           echo "Found Opera GX at: $OPERA_BIN"
