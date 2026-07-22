@@ -63,6 +63,7 @@ options.add_argument("--disable-features=IsolateOrigins,site-per-process")
 options.add_argument("--disable-extensions")
 
 # Initialize WebDriver
+os.environ["LD_LIBRARY_PATH"] = "/usr/lib/x86_64-linux-gnu/opera-gx-stable:" + os.environ.get("LD_LIBRARY_PATH", "")
 driver = webdriver.Chrome(options=options,service=service) 
 driver.get("https://accounts.seedloaf.com/sign-in")
 #driver.maximize_window()
