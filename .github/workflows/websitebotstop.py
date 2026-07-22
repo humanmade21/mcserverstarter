@@ -43,7 +43,7 @@ USER_DATA_DIR = "/tmp/seedloaf-session"
 options.add_argument(f"--user-data-dir={USER_DATA_DIR}")
 options.add_argument("--profile-directory=Default")  # Optional
 
-options.binary_location = "/opt/chrome/chrome"
+options.binary_location = "/opt/opera-gx/opera-gx"
 options.add_argument("--headless=new")  # Use new headless mode
 options.add_argument("window-size=1920x1080")  # Ensure full viewport
 options.add_argument("--disable-gpu")  # Fix rendering issues in headless
