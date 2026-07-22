@@ -1,12 +1,6 @@
 name: Run Selenium Script 
 
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - '**.md'
-      - '**.txt'
   workflow_dispatch:
     inputs:
       use_session_cache:
