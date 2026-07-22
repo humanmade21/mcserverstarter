@@ -49,33 +49,30 @@ jobs:
       - name: Install jq
         run: sudo apt-get install -y jq unzip
 
-      - name: Cache Chrome and ChromeDriver
-        id: chrome-cache
+      - name: Cache Opera GX and ChromeDriver
+        id: opera-cache
         uses: actions/cache@v4
         with:
           path: |
-            /opt/chrome
+            /opt/opera-gx
             /usr/local/bin/chromedriver
-          key: chrome-cache-v1
+          key: opera-cache-v1
 
-      - name: Check Chrome and Chrome driver
-        if: steps.chrome-cache.outputs.cache-hit != 'true'
-        id: install-chrome
+      - name: Install Opera GX and ChromeDriver
+        if: steps.opera-cache.outputs.cache-hit != 'true'
         run: |
-          # Get Latest Stable Chrome Version
+          # Download and install Opera GX .deb package
+          wget -O opera-gx.deb "https://download3.operacdn.com/pub/opera_gx/latest/linux/opera-gx-stable_amd64.deb"
+          sudo apt-get install -y ./opera-gx.deb
+
+          # Find where it actually installed to (commonly /usr/bin/opera-gx)
+          which opera-gx || echo "opera-gx binary not found at expected path — check install output above"
+          sudo mkdir -p /opt/opera-gx
+          sudo ln -sf $(which opera-gx) /opt/opera-gx/opera-gx
+
+          # ChromeDriver still needed - Opera GX is Chromium-based, so the
+          # matching Chromium version's driver works, but pin a recent stable one.
           LATEST_VERSION=$(curl -s https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json | jq -r '.channels.Stable.version')
-          echo "chrome_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
-          echo "Latest Chrome version: $LATEST_VERSION"
-
-          # Intall Chrome and Chrome driver
-          CHROME_URL="https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${LATEST_VERSION}/linux64/chrome-linux64.zip"
-          wget "$CHROME_URL" -O chrome.zip
-          unzip -q chrome.zip
-          sudo mv chrome-linux64 /opt/chrome
-          sudo chmod +x /opt/chrome/chrome
-          sudo ln -sf /opt/chrome/chrome /usr/bin/google-chrome
-
-          # Install ChromeDriver to /usr/local/bin
           DRIVER_URL="https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${LATEST_VERSION}/linux64/chromedriver-linux64.zip"
           wget "$DRIVER_URL" -O chromedriver.zip
           unzip -q chromedriver.zip
