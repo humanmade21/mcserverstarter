@@ -43,29 +43,18 @@ jobs:
       - name: Install jq
         run: sudo apt-get install -y jq unzip
 
-      - name: Cache Opera GX and ChromeDriver
-        id: opera-cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            /opt/opera-gx
-            /usr/local/bin/chromedriver
-          key: opera-cache-v4
-
       - name: Install Opera GX and ChromeDriver
-        if: steps.opera-cache.outputs.cache-hit != 'true'
         run: |
           # Add Opera's official APT repository and install Opera GX through it.
-          # This avoids guessing a direct .deb filename/URL, which turned out to
-          # be unreliable - the repo method is what Opera actually documents for
-          # scripted/CI installs.
           wget -qO- https://deb.opera.com/archive.key | sudo gpg --dearmor -o /usr/share/keyrings/opera-archive-keyring.gpg
           echo "deb [signed-by=/usr/share/keyrings/opera-archive-keyring.gpg arch=amd64] https://deb.opera.com/opera-gx-stable/ stable non-free" | sudo tee /etc/apt/sources.list.d/opera-gx-stable.list
 
           sudo apt-get update
           sudo apt-get install -y opera-gx-stable
 
-          # Confirm where it installed and symlink to a stable path we control
+          # Confirm where it actually installed - do NOT symlink into a cached
+          # folder, since caching just the symlink (not the real binary) causes
+          # a dangling link on future runs if apt install gets skipped.
           OPERA_BIN=$(which opera-gx || echo "")
           if [ -z "$OPERA_BIN" ]; then
             echo "ERROR: opera-gx binary not found after install."
@@ -73,8 +62,7 @@ jobs:
             exit 1
           fi
           echo "Found Opera GX at: $OPERA_BIN"
-          sudo mkdir -p /opt/opera-gx
-          sudo ln -sf "$OPERA_BIN" /opt/opera-gx/opera-gx
+          echo "OPERA_GX_PATH=$OPERA_BIN" >> $GITHUB_ENV
 
           # ChromeDriver still works to drive Opera GX since it's Chromium-based
           LATEST_VERSION=$(curl -s https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json | jq -r '.channels.Stable.version')
