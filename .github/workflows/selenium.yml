@@ -95,6 +95,13 @@ jobs:
           USERNAME: ${{ secrets.USERNAME }}
         run: echo "USERNAME is $USERNAME"
 
+      - name: Debug Inputs
+        run: |
+          echo "inputs.start_or_stop = '${{ inputs.start_or_stop }}'"
+          echo "inputs.use_session_cache = '${{ inputs.use_session_cache }}'"
+          echo "github.event.inputs.start_or_stop = '${{ github.event.inputs.start_or_stop }}'"
+          echo "github.event_name = '${{ github.event_name }}'"
+
       - name: Restore Session Cache
         if: ${{ inputs.use_session_cache == 'true' }}
         id: restore-session
