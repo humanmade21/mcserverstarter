@@ -86,6 +86,7 @@ jobs:
 
       - name: Debug Opera GX
         run: |
+          set +e
           file /usr/bin/opera-gx
           ls -l /usr/bin/opera-gx
           opera-gx --version
