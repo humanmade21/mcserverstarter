@@ -48,9 +48,21 @@ options.add_argument("--disable-popup-blocking")
 options.add_argument("--disable-features=IsolateOrigins,site-per-process")
 options.add_argument("--disable-extensions")
 
-service = Service("/usr/local/bin/chromedriver")
+service = Service("/usr/local/bin/chromedriver", log_output="chromedriver.log")
+options.add_argument("--enable-logging")
+options.add_argument("--v=1")
 
-driver = webdriver.Chrome(options=options, service=service)
+try:
+    driver = webdriver.Chrome(options=options, service=service)
+except Exception as e:
+    print(f"Chrome failed to start: {e}")
+    print("--- chromedriver.log contents ---")
+    try:
+        with open("chromedriver.log", "r") as f:
+            print(f.read())
+    except Exception as log_err:
+        print(f"Could not read chromedriver.log: {log_err}")
+    raise
 driver.get("https://accounts.seedloaf.com/sign-in")
 
 WebDriverWait(driver, 10).until(lambda driver: driver.execute_script("return document.readyState") == "complete")
