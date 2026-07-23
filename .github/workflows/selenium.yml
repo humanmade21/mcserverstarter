@@ -62,6 +62,8 @@ jobs:
             exit 1
           fi
           echo "Found Opera GX at: $OPERA_BIN"
+          $OPERA_BIN --version
+          chromedriver --version
           echo "OPERA_GX_PATH=$OPERA_BIN" >> $GITHUB_ENV
 
           # ChromeDriver still works to drive Opera GX since it's Chromium-based
