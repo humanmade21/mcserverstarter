@@ -84,6 +84,14 @@ jobs:
           echo "github.event.inputs.start_or_stop = '${{ github.event.inputs.start_or_stop }}'"
           echo "github.event_name = '${{ github.event_name }}'"
 
+      - name: Debug Opera GX
+        run: |
+          file /usr/bin/opera-gx
+          ls -l /usr/bin/opera-gx
+          opera-gx --version
+          opera-gx --headless=new about:blank
+          echo "Exit code: $?"
+      
       - name: Restore Session Cache
         if: ${{ inputs.use_session_cache == 'true' }}
         id: restore-session
