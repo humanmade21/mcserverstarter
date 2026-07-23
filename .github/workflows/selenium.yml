@@ -84,18 +84,6 @@ jobs:
           echo "github.event.inputs.start_or_stop = '${{ github.event.inputs.start_or_stop }}'"
           echo "github.event_name = '${{ github.event_name }}'"
 
-      - name: Test Opera GX launches directly (diagnostic)
-        run: |
-          echo "Opera GX binary location: $OPERA_GX_PATH"
-          echo "Resolved real path:"
-          readlink -f "$OPERA_GX_PATH"
-          echo "---"
-          echo "Searching for libffmpeg.so anywhere on the system:"
-          find / -name "libffmpeg.so*" 2>/dev/null
-          echo "---"
-          echo "Listing Opera's actual install directory:"
-          ls -la "$(dirname "$(readlink -f "$OPERA_GX_PATH")")"
-
       - name: Restore Session Cache
         if: ${{ inputs.use_session_cache == 'true' }}
         id: restore-session
