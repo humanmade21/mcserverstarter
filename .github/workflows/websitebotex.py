@@ -68,7 +68,17 @@ options.add_argument("--disable-features=IsolateOrigins,site-per-process")
 options.add_argument("--disable-extensions")
 
 # Initialize WebDriver
-driver = webdriver.Chrome(options=options,service=service) 
+driver = webdriver.Chrome(options=options,service=service)
+driver.execute_cdp_cmd(
+    "Page.addScriptToEvaluateOnNewDocument",
+    {
+        "source": """
+Object.defineProperty(window, 'opr', {
+    get: () => ({})
+});
+"""
+    }
+)
 driver.get("https://accounts.seedloaf.com/sign-in")
 #driver.maximize_window()
 
