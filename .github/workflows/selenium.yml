@@ -1,6 +1,12 @@
 name: Run Selenium Script 
 
 on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
   workflow_dispatch:
     inputs:
       use_session_cache:
@@ -43,32 +49,33 @@ jobs:
       - name: Install jq
         run: sudo apt-get install -y jq unzip
 
-      - name: Install Opera GX and ChromeDriver
+      - name: Cache Chrome and ChromeDriver
+        id: chrome-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            /opt/chrome
+            /usr/local/bin/chromedriver
+          key: chrome-cache-v1
+
+      - name: Check Chrome and Chrome driver
+        if: steps.chrome-cache.outputs.cache-hit != 'true'
+        id: install-chrome
         run: |
-          # Add Opera's official APT repository and install Opera GX through it.
-          wget -qO- https://deb.opera.com/archive.key | sudo gpg --dearmor -o /usr/share/keyrings/opera-archive-keyring.gpg
-          echo "deb [signed-by=/usr/share/keyrings/opera-archive-keyring.gpg arch=amd64] https://deb.opera.com/opera-gx-stable/ stable non-free" | sudo tee /etc/apt/sources.list.d/opera-gx-stable.list
-
-          sudo apt-get update
-          sudo apt-get install -y opera-gx-stable
-          sudo glib-compile-schemas /usr/share/glib-2.0/schemas
-
-          # Confirm where it actually installed - do NOT symlink into a cached
-          # folder, since caching just the symlink (not the real binary) causes
-          # a dangling link on future runs if apt install gets skipped.
-          OPERA_BIN=$(which opera-gx || echo "")
-          if [ -z "$OPERA_BIN" ]; then
-            echo "ERROR: opera-gx binary not found after install."
-            dpkg -L opera-gx-stable || true
-            exit 1
-          fi
-          echo "Found Opera GX at: $OPERA_BIN"
-          $OPERA_BIN --version
-          chromedriver --version
-          echo "OPERA_GX_PATH=$OPERA_BIN" >> $GITHUB_ENV
-
-          # ChromeDriver still works to drive Opera GX since it's Chromium-based
+          # Get Latest Stable Chrome Version
           LATEST_VERSION=$(curl -s https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json | jq -r '.channels.Stable.version')
+          echo "chrome_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+          echo "Latest Chrome version: $LATEST_VERSION"
+
+          # Intall Chrome and Chrome driver
+          CHROME_URL="https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${LATEST_VERSION}/linux64/chrome-linux64.zip"
+          wget "$CHROME_URL" -O chrome.zip
+          unzip -q chrome.zip
+          sudo mv chrome-linux64 /opt/chrome
+          sudo chmod +x /opt/chrome/chrome
+          sudo ln -sf /opt/chrome/chrome /usr/bin/google-chrome
+
+          # Install ChromeDriver to /usr/local/bin
           DRIVER_URL="https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${LATEST_VERSION}/linux64/chromedriver-linux64.zip"
           wget "$DRIVER_URL" -O chromedriver.zip
           unzip -q chromedriver.zip
@@ -80,22 +87,6 @@ jobs:
           USERNAME: ${{ secrets.USERNAME }}
         run: echo "USERNAME is $USERNAME"
 
-      - name: Debug Inputs
-        run: |
-          echo "inputs.start_or_stop = '${{ inputs.start_or_stop }}'"
-          echo "inputs.use_session_cache = '${{ inputs.use_session_cache }}'"
-          echo "github.event.inputs.start_or_stop = '${{ github.event.inputs.start_or_stop }}'"
-          echo "github.event_name = '${{ github.event_name }}'"
-
-      - name: Debug Opera GX
-        run: |
-          set +e
-          file /usr/bin/opera-gx
-          ls -l /usr/bin/opera-gx
-          opera-gx --version
-          opera-gx --headless=new about:blank
-          echo "Exit code: $?"
-      
       - name: Restore Session Cache
         if: ${{ inputs.use_session_cache == 'true' }}
         id: restore-session
