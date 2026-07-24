@@ -79,6 +79,13 @@ Object.defineProperty(window, 'opr', {
 """
     }
 )
+driver.execute_cdp_cmd(
+    "Network.setUserAgentOverride",
+    {
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 OPR/133.0.0.0 (Edition std-2)",
+        "platform": "Windows"
+    }
+)
 driver.get("https://accounts.seedloaf.com/sign-in")
 #driver.maximize_window()
 
