@@ -1,12 +1,6 @@
 name: Run Selenium Script 
 
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - '**.md'
-      - '**.txt'
   workflow_dispatch:
     inputs:
       use_session_cache:
@@ -14,7 +8,7 @@ on:
         required: false
         default: "false"
       start_or_stop:
-        description: "start or stop"
+        description: "start, false (stop), or status"
         required: false
         default: "true"
 
@@ -62,12 +56,9 @@ jobs:
         if: steps.chrome-cache.outputs.cache-hit != 'true'
         id: install-chrome
         run: |
-          # Get Latest Stable Chrome Version
           LATEST_VERSION=$(curl -s https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json | jq -r '.channels.Stable.version')
           echo "chrome_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
-          echo "Latest Chrome version: $LATEST_VERSION"
 
-          # Intall Chrome and Chrome driver
           CHROME_URL="https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${LATEST_VERSION}/linux64/chrome-linux64.zip"
           wget "$CHROME_URL" -O chrome.zip
           unzip -q chrome.zip
@@ -75,17 +66,11 @@ jobs:
           sudo chmod +x /opt/chrome/chrome
           sudo ln -sf /opt/chrome/chrome /usr/bin/google-chrome
 
-          # Install ChromeDriver to /usr/local/bin
           DRIVER_URL="https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${LATEST_VERSION}/linux64/chromedriver-linux64.zip"
           wget "$DRIVER_URL" -O chromedriver.zip
           unzip -q chromedriver.zip
           chmod +x chromedriver-linux64/chromedriver
           sudo mv chromedriver-linux64/chromedriver /usr/local/bin/chromedriver
-
-      - name: Debug Secrets
-        env:
-          USERNAME: ${{ secrets.USERNAME }}
-        run: echo "USERNAME is $USERNAME"
 
       - name: Restore Session Cache
         if: ${{ inputs.use_session_cache == 'true' }}
@@ -104,12 +89,29 @@ jobs:
           PASSWORD: ${{ secrets.PASSWORD }}
         run: python .github/workflows/websitebotex.py
 
+      - name: Run Selenium Status Check Script
+        if: ${{ inputs.start_or_stop == 'status' }}
+        env:
+          USERNAME: ${{ secrets.USERNAME }}
+          PASSWORD: ${{ secrets.PASSWORD }}
+        run: python .github/workflows/websitebotstatus.py
+
       - name: Run Selenium Stop Script
         if: ${{ inputs.start_or_stop == 'false' }}
         env:
           USERNAME: ${{ secrets.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
         run: python .github/workflows/websitebotstop.py
+
+      - name: Upload debug screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-screenshots
+          path: |
+            *.png
+            *.html
+          if-no-files-found: ignore
 
       - name: Check for new session
         if: ${{ inputs.use_session_cache == 'true' }}
