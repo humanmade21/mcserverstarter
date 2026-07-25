@@ -64,7 +64,15 @@ driver.get("https://accounts.seedloaf.com/sign-in")
 
 WebDriverWait(driver, 10).until(lambda driver: driver.execute_script("return document.readyState") == "complete")
 
-# --- DIAGNOSTIC: capture what the page actually looks like right after load ---
+# --- Cloudflare challenge detection ---
+# "Just a moment..." is Cloudflare's known challenge-page title. If we see
+# it, the automated browser got blocked before ever reaching the real page.
+if "Just a moment" in driver.title:
+    print("STATUS: cloudflare_blocked")
+    print(f"Blocked by Cloudflare challenge. Page title: {driver.title}")
+    driver.quit()
+    sys.exit(1)
+
 driver.save_screenshot("screenshot_after_load.png")
 with open("page_source_after_load.html", "w", encoding="utf-8") as f:
     f.write(driver.page_source)
@@ -132,6 +140,12 @@ try:
 except FileNotFoundError:
     pass
 
+if "Just a moment" in driver.title:
+    print("STATUS: cloudflare_blocked")
+    print(f"Blocked by Cloudflare mid-flow. Page title: {driver.title}")
+    driver.quit()
+    sys.exit(1)
+
 try:
     WebDriverWait(driver, 10).until(lambda d: "dashboard" in d.current_url)
     print("✅ Already logged in, at dashboard")
@@ -192,7 +206,7 @@ try:
     while attempt * RETRY_INTERVAL < MAX_RETRY_SECONDS:
         driver.execute_script("arguments[0].click();", startworld)
         attempt += 1
-        print(f"STATUS: retrying {attempt}")
+        print(f"STATUS: server_full_retrying {attempt}")
 
         # Give the toast a brief moment to appear if it's going to.
         time.sleep(1)
