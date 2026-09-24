@@ -255,11 +255,13 @@ try:
                 By.XPATH,
                 "//span[contains(text(), 'All servers are currently full')]"
             )
-        if full_toast.is_displayed():
+            if full_toast.is_displayed():
                 print(f"STATUS: server_full_retrying {attempt}")
                 print(f"Servers full, attempt {attempt}. Retrying in {RETRY_INTERVAL}s...")
                 time.sleep(RETRY_INTERVAL)
                 continue
+            started_successfully = True
+            break
         except Exception:
             # No "servers full" toast found - assume the click worked.
             started_successfully = True
