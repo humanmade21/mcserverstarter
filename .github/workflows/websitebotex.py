@@ -194,13 +194,17 @@ def wait_for_start_result(timeout=10):
         except Exception:
             pass
 
-        # 3. The session controls dropdown appears once the start is accepted.
+         # 3. Started-state markers. Don't require is_displayed(): the
+        # dropdown can exist in the DOM without Selenium calling it visible.
         try:
-            session_ctrl = driver.find_elements(
-                By.XPATH, "//*[@aria-label='More session options']"
+            markers = driver.find_elements(
+                By.XPATH,
+                "//*[@aria-label='More session options'] | "
+                "//*[contains(@data-sentry-component, 'ActionsDropdown')] | "
+                "//span[normalize-space()='Force stop']"
             )
-            if any(c.is_displayed() for c in session_ctrl):
-                print("Session controls appeared - start accepted.")
+            if markers:
+                print("Started-state controls found in page - start accepted.")
                 return "started"
         except Exception:
             pass
