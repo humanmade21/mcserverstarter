@@ -133,6 +133,35 @@ def run_loginflow(usernamesec, passwordsec):
         driver.save_screenshot("screenshot_password_fail.png")
     ran_loginflow = 2
 
+def open_shared_tab():
+    """Click the 'Shared With You' tab so the server list loads."""
+    try:
+        label = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((
+                By.XPATH,
+                "//span[contains(translate(normalize-space(.), "
+                "'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'shared with you')]"
+            ))
+        )
+        try:
+            target = label.find_element(
+                By.XPATH,
+                "./ancestor::*[self::button or self::a or @role='tab'][1]"
+            )
+        except Exception:
+            target = label
+
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", target)
+        driver.execute_script("arguments[0].click();", target)
+        print("Clicked 'Shared With You'")
+        time.sleep(2)
+        return True
+    except Exception as e:
+        print(f"'Shared With You' tab not found: {e}")
+        driver.save_screenshot("screenshot_shared_fail.png")
+        with open("page_source_shared_fail.html", "w", encoding="utf-8") as f:
+            f.write(driver.page_source)
+        return False
 
 MARKER_FILE = "/tmp/seedloaf-session/.valid_session"
 try:
@@ -160,7 +189,7 @@ except:
         print("something wrong with secrets")
     with open(MARKER_FILE, "w") as f:
         f.write("session valid")
-
+open_shared_tab()
 try:
     try:
         wait = WebDriverWait(driver, 20)
