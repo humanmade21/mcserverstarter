@@ -194,12 +194,13 @@ def wait_for_start_result(timeout=10):
         except Exception:
             pass
 
-        # 3. Did the Start World button disappear? That means it worked.
+        # 3. The session controls dropdown appears once the start is accepted.
         try:
-            still_there = driver.find_elements(
-                By.XPATH, "//button[.//span[normalize-space()='Start World']]"
+            session_ctrl = driver.find_elements(
+                By.XPATH, "//*[@aria-label='More session options']"
             )
-            if not any(b.is_displayed() for b in still_there):
+            if any(c.is_displayed() for c in session_ctrl):
+                print("Session controls appeared - start accepted.")
                 return "started"
         except Exception:
             pass
