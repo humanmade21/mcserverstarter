@@ -162,7 +162,7 @@ def open_shared_tab():
         with open("page_source_shared_fail.html", "w", encoding="utf-8") as f:
             f.write(driver.page_source)
         return False
-def wait_for_start_result(timeout=5):
+def wait_for_start_result(timeout=10):
     """After clicking Start, watch the page. Returns one of:
     'started'  - the Start World button went away (page changed)
     'full'     - the 'All servers are currently full' toast appeared
