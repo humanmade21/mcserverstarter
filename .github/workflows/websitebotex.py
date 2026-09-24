@@ -193,7 +193,10 @@ open_shared_tab()
 try:
     try:
         wait = WebDriverWait(driver, 20)
-        startworld = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button.btn-primary")))
+        startworld = wait.until(EC.element_to_be_clickable((
+            By.XPATH,
+            "//button[.//span[normalize-space()='Start World']]"
+        )))
         print("After waiting for start:\n" + driver.current_url)
     except:
         driver.save_screenshot("screenshot_final_fail.png")
