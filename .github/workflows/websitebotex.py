@@ -162,6 +162,50 @@ def open_shared_tab():
         with open("page_source_shared_fail.html", "w", encoding="utf-8") as f:
             f.write(driver.page_source)
         return False
+def wait_for_start_result(timeout=5):
+    """After clicking Start, watch the page. Returns one of:
+    'started'  - the Start World button went away (page changed)
+    'full'     - the 'All servers are currently full' toast appeared
+    'error'    - some other error toast/message appeared
+    'unknown'  - nothing changed within the timeout"""
+    end = time.time() + timeout
+    while time.time() < end:
+        # 1. Servers full toast
+        try:
+            toast = driver.find_element(
+                By.XPATH, "//span[contains(text(), 'All servers are currently full')]"
+            )
+            if toast.is_displayed():
+                return "full"
+        except Exception:
+            pass
+
+        # 2. Any other error-looking message
+        try:
+            errors = driver.find_elements(
+                By.XPATH,
+                "//*[contains(@class, 'toast') or contains(@class, 'alert-error') "
+                "or contains(@class, 'error') or @role='alert']"
+            )
+            for e in errors:
+                if e.is_displayed() and e.text.strip():
+                    print(f"Page message seen: {e.text.strip()}")
+                    return "error"
+        except Exception:
+            pass
+
+        # 3. Did the Start World button disappear? That means it worked.
+        try:
+            still_there = driver.find_elements(
+                By.XPATH, "//button[.//span[normalize-space()='Start World']]"
+            )
+            if not any(b.is_displayed() for b in still_there):
+                return "started"
+        except Exception:
+            pass
+
+        time.sleep(1)
+    return "unknown"
 
 MARKER_FILE = "/tmp/seedloaf-session/.valid_session"
 try:
@@ -234,45 +278,59 @@ try:
     RETRY_INTERVAL = 1
     attempt = 0
     started_successfully = False
+    final_reason = None
 
     while attempt * RETRY_INTERVAL < MAX_RETRY_SECONDS:
         try:
-            startworld.click()  # real click, more reliable than a JS click
+            time.sleep(2)  # let the page finish loading its handlers
+            startworld.click()
         except Exception:
             driver.execute_script("arguments[0].click();", startworld)
         attempt += 1
         print(f"Start click attempt {attempt}")
-        print(f"STATUS: server_full_retrying {attempt}") if attempt > 1 else None
 
-        # Give the page a moment to react, then save evidence of what happened.
-        time.sleep(3)
+        result = wait_for_start_result(timeout=25)
+        print(f"Result after click {attempt}: {result}")
+
         driver.save_screenshot(f"screenshot_after_click_{attempt}.png")
         with open(f"page_source_after_click_{attempt}.html", "w", encoding="utf-8") as f:
             f.write(driver.page_source)
 
-        try:
-            full_toast = driver.find_element(
-                By.XPATH,
-                "//span[contains(text(), 'All servers are currently full')]"
-            )
-            if full_toast.is_displayed():
-                print(f"STATUS: server_full_retrying {attempt}")
-                print(f"Servers full, attempt {attempt}. Retrying in {RETRY_INTERVAL}s...")
-                time.sleep(RETRY_INTERVAL)
-                continue
-            started_successfully = True
-            break
-        except Exception:
-            # No "servers full" toast found - assume the click worked.
+        if result == "started":
             started_successfully = True
             break
 
+        if result == "full":
+            print(f"STATUS: server_full_retrying {attempt}")
+            print(f"Servers full, attempt {attempt}. Retrying in {RETRY_INTERVAL}s...")
+            time.sleep(RETRY_INTERVAL)
+            # the button may have been re-rendered, so find it again
+            try:
+                startworld = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((
+                    By.XPATH, "//button[.//span[normalize-space()='Start World']]"
+                )))
+            except Exception:
+                pass
+            continue
+
+        # 'error' or 'unknown': don't claim success
+        final_reason = result
+        break
+
     if started_successfully:
         print("STATUS: started")
-        print("Clicked start - server starting.")
+        print("Start confirmed - the page changed after clicking.")
+    elif final_reason:
+        print("STATUS: failed")
+        print(f"Start was NOT confirmed (result: {final_reason}). Check the screenshot.")
+        driver.save_screenshot("screenshot_start_unconfirmed.png")
+        driver.quit()
+        sys.exit(1)
     else:
         print("STATUS: failed_servers_full")
-        print(f"Gave up after {attempt} attempts over {MAX_RETRY_SECONDS} seconds - servers still full.")
+        print(f"Gave up after {attempt} attempts - servers still full.")
+        driver.quit()
+        sys.exit(1)
 
     time.sleep(2)
 
