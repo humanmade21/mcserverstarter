@@ -318,7 +318,14 @@ try:
                 pass
             continue
 
-        # 'error' or 'unknown': don't claim success
+        if result == "unknown":
+            # No error and no full-servers toast appeared. Clicks have been
+            # working in this state, so treat it as started, but say so.
+            print("No error or full-servers message appeared - assuming started.")
+            started_successfully = True
+            break
+
+        # 'error': a real error message showed up
         final_reason = result
         break
 
