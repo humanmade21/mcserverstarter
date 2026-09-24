@@ -242,6 +242,7 @@ try:
             driver.execute_script("arguments[0].click();", startworld)
         attempt += 1
         print(f"Start click attempt {attempt}")
+        print(f"STATUS: server_full_retrying {attempt}") if attempt > 1 else None
 
         # Give the page a moment to react, then save evidence of what happened.
         time.sleep(3)
@@ -254,7 +255,8 @@ try:
                 By.XPATH,
                 "//span[contains(text(), 'All servers are currently full')]"
             )
-            if full_toast.is_displayed():
+           if full_toast.is_displayed():
+                print(f"STATUS: server_full_retrying {attempt}")
                 print(f"Servers full, attempt {attempt}. Retrying in {RETRY_INTERVAL}s...")
                 time.sleep(RETRY_INTERVAL)
                 continue
