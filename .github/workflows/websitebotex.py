@@ -236,12 +236,18 @@ try:
     started_successfully = False
 
     while attempt * RETRY_INTERVAL < MAX_RETRY_SECONDS:
-        driver.execute_script("arguments[0].click();", startworld)
+        try:
+            startworld.click()  # real click, more reliable than a JS click
+        except Exception:
+            driver.execute_script("arguments[0].click();", startworld)
         attempt += 1
-        print(f"STATUS: server_full_retrying {attempt}")
+        print(f"Start click attempt {attempt}")
 
-        # Give the toast a brief moment to appear if it's going to.
-        time.sleep(1)
+        # Give the page a moment to react, then save evidence of what happened.
+        time.sleep(3)
+        driver.save_screenshot(f"screenshot_after_click_{attempt}.png")
+        with open(f"page_source_after_click_{attempt}.html", "w", encoding="utf-8") as f:
+            f.write(driver.page_source)
 
         try:
             full_toast = driver.find_element(
